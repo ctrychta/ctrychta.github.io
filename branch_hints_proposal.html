@@ -69,7 +69,7 @@ span.foot:before {
 </head>
 <body>
 Document number: DnnnnR0<br/>
-Date: 2016-08-28<br/>
+Date: 2016-09-10<br/>
 Project: Programming Language C++ - Evolution, SG14<br/>
 Reply-to: Clay Trychta &lt;clay.trychta@gmail.com&gt;<br/>
 
@@ -81,10 +81,8 @@ Reply-to: Clay Trychta &lt;clay.trychta@gmail.com&gt;<br/>
   <li><a href="#intro">Introduction</a></li>
   <li><a href="#impact">Impact On the Standard</a></li>
   <li><a href="#design">Design Decisions</a></li>
-  <!--
   <li><a href="#spec">Technical Specifications</a></li>
   <li><a href="#acknowledgements">Acknowledgements</a></li>
-  -->
   <li><a href="#references">References</a></li>
 </ul>
 
@@ -124,7 +122,7 @@ Some of the possible code generation improvements from using branch probability 
 </ul>
 
 <p>
-Since this proposal has made a few claims about the potential to improve the generated code and performance I have created a couple small examples showing the possible benefits.  All testing was performed with the GCC 6.1.1 20160621 compiler and run on a Xeon E3 1245 v3.  All examples were compiled with <code>-O3 -march=haswell</code> plus defines to control behavior and some other test specific flags mentioned below.  Tests were run three times using <code>perf stat</code> and the median value was taken.
+Since this proposal has made claims about the potential to improve generated code and performance I have created a couple of small examples showing the possible benefits.  All testing was performed with the GCC 6.1.1 20160621 compiler and run on a Xeon E3 1245 v3.  All examples were compiled with <code>-O3 -march=haswell</code> plus defines to control behavior and some other test specific flags mentioned below.  Tests were run three times using <code>perf stat</code> and the median value was taken.
 </p>
 
 <p>
@@ -140,52 +138,52 @@ This <a href="#appendix_A">first example</a> examines clamping integer values in
   <tr class="stripe">
     <td>.1%</td>
     <td>8.01</td>
-    <td>6.17</td>
+    <td>6.17 (-1.84)</td>
   </tr>
   <tr>
     <td>1%</td>
     <td>8.25</td>
-    <td>6.76</td>
+    <td>6.76 (-1.49)</td>
   </tr>
   <tr class="stripe">
     <td>5%</td>
     <td>9.36</td>
-    <td>7.91</td>
+    <td>7.91 (-1.45)</td>
   </tr>
   <tr>
     <td>10%</td>
     <td>10.83</td>
-    <td>9.42</td>
+    <td>9.42 (-1.41)</td>
   </tr>
   <tr class="stripe">
     <td>50%</td>
     <td>22.55</td>
-    <td>23.42</td>
+    <td>23.42 (+0.87)</td>
   </tr>
   <tr>
     <td>90%</td>
     <td>33.91</td>
-    <td>35.42</td>
+    <td>35.42 (+1.51)</td>
   </tr>
   <tr class="stripe">
     <td>95%</td>
     <td>34.35</td>
-    <td>35.88</td>
+    <td>35.88 (+1.53)</td>
   </tr>
   <tr>
     <td>99%</td>
     <td>34.48</td>
-    <td>36.02</td>
+    <td>36.02 (+1.54)</td>
   </tr>
   <tr class="stripe">
     <td>99.9%</td>
     <td>34.53</td>
-    <td>36.03</td>
+    <td>36.03 (+1.5)</td>
   </tr>
 </table>
 
 <p>
-The <a href="#appendix_B">next example</a> examines the tradeoffs between using conditional move and compare/jump.  This time the code was compiled without hints, with a hint to expect the comparison to succeed, and with a hint to expect the comparison to fail.  The compiled example was then run with various percentages of values for which the comparison would succeed.  I was unable to get GCC to stop generating conditional move instructions using only <code>__builtin_expect</code> so I compiled with <code>-fno-if-conversion -fno-tree-loop-if-convert</code> to simulate it.  It appears that recent Clang versions will generate code using comparison and jumps based on the usage of <code>__builtin_expect</code><span class="foot"></span>.
+The <a href="#appendix_B">next example</a> examines the tradeoffs between using conditional move and compare/jump.  This time the code was compiled without hints, with a hint to expect the comparison to succeed, and with a hint to expect the comparison to fail.  The compiled example was then run with various percentages of values for which the comparison would succeed.  I was unable to get GCC to stop generating conditional move instructions using only <code>__builtin_expect</code> so I compiled with <code>-fno-if-conversion -fno-tree-loop-if-convert</code> to simulate it.  Recent versions of Clang (3.9) will generate code using comparison and jumps based on the usage of <code>__builtin_expect</code><span class="foot"></span>.
 </p>
 
 <p>
@@ -202,44 +200,44 @@ The results show that if almost all values (99%+) will take a particular branch 
   <tr class="stripe">
     <td>.1%</td>
     <td>4.98</td>
-    <td>3.47</td>
-    <td>5.58</td>
+    <td>3.47 (-1.51)</td>
+    <td>5.58 (+0.6)</td>
   </tr>
   <tr>
     <td>.5%</td>
     <td>4.96</td>
-    <td>3.76</td>
-    <td>5.95</td>
+    <td>3.76 (-1.2)</td>
+    <td>5.95 (+0.99)</td>
   </tr>
   <tr class="stripe">
     <td>1%</td>
     <td>4.97</td>
-    <td>4.12</td>
-    <td>6.31</td>
+    <td>4.12 (-0.85)</td>
+    <td>6.31 (+1.34)</td>
   </tr>
   <tr>
     <td>50%</td>
     <td>4.91</td>
-    <td>36.02</td>
-    <td>33.74</td>
+    <td>36.02 (+31.11)</td>
+    <td>33.74 (+28.83)</td>
   </tr>
   <tr class="stripe">
     <td>99%</td>
     <td>4.95</td>
-    <td>5.44</td>
-    <td>5.04</td>
+    <td>5.44 (+0.49)</td>
+    <td>5.04 (+0.09)</td>
   </tr>
   <tr>
     <td>99.5%</td>
     <td>4.91</td>
-    <td>5.02</td>
-    <td>4.56</td>
+    <td>5.02 (+0.11)</td>
+    <td>4.56 (-0.35)</td>
   </tr>
   <tr class="stripe">
     <td>99.9%</td>
     <td>4.92</td>
-    <td>4.73</td>
-    <td>4.09</td>
+    <td>4.73 (-0.19)</td>
+    <td>4.09 (-0.83)</td>
   </tr>
 </table>
 
@@ -255,17 +253,85 @@ This proposal has minimal impact on the current standard as it proposes two new 
 
 <h2 id="design">V. Design Decisions</h2>
 
+<h3>Related Use Cases</h3>
+
 <p>
-<em>Question #1:</em> Why does this proposal not mimic <code>__builtin_expect</code> more closely?
+From discussions regarding this proposal it seems that there are several related cases that people would like to be able to provide hints to the compiler for:
+</p>
+
+<ul>
+  <li>
+    Annotating branches that are very likely or unlikely to be true.  
+  </li>
+  <li>
+    Indicating whether or not a branch is predictable.  This is useful in cases where it is known ahead of time that the values being branched on are going to follow a predictable pattern, but a particular direction does not have a high likelihood (in which case likely/unlikely could be used). 
+  </li>
+  <li>
+    Annotating the priority of a particular branch direction.  This is orthogonal to the likelihood of a branch being taken and indicates that the a particular direction should be optimized for even if it is unlikley in order to decrease latency for that particular case (even at the cost of slowing down the more common case). 
+  </li>
+</ul>
+
+<p>
+This proposal currently focuses solving the first of the above cases.
+</p>
+
+<p>
+The benefits of the second case would likely revolve around helping the compiler to decide whether it is preferable to generate branches or predicated instructions.  There is some implementation experience for this case via <code>__builtin_unpredictable</code> in Clang which is used to indicate that a branch is unpredictable by the branch predictor which can result in generated code using predicated instructions instead of the compare/jump that would have been generated otherwise <span class="foot"></span>.  Research in this area has found that using predicated instructions can "have a significant impact on the performance of most high-performance architectures" due to reducing the number of unpredictable branches which can increase instruction level parallelism <span class="foot"></span><span class="foot"></span>.  If there is interest I can certainly add support for this case to the proposal.
+</p>
+
+<p>
+I am not aware of any existing way to indicate the third case to compilers so support for this case would most likely need to be implemented in a compiler in order to gain some real world experience with it before proposing it for standardization. 
+</p>
+
+<h3>Open Questions</h3>
+
+<p>
+<em>Question #1:</em> What should the attribute(s) be called and how should they work?
 </p>
 <blockquote>
 <p>
-From the existing usages that I have seen and my own experience it seems that <code>__builtin_expect</code> is rarely used by itself.  It is almost always used as <code>likely/unlikely</code> macros so that is what I decided to propose.  If there are other use cases the committee would like to see supported which require functionality more similar to <code>__builtin_expect</code> this proposal can certainly be updated.
+The names <code>[[likely]]</code> and <code>[[unlikely]]</code> seem to be the most common ones given to the macros in existing code bases which implement the proposed functionality.  However, there are certainly many other possibilities some of which include:
+<ul>
+  <li><code>[[optimize_for(likely/unlikely)]]</code></li>
+  <li><code>[[behaviour(probability, .99)]]</code></li>
+  <li><code>[[expect(true/false)]]</code></li>
+  <li><code>[[hot_path/cold_path]]</code></li>
+</ul>
+Some of the alternatives, particularly <code>optimize_for/behaviour</code>, could be used to give even more information to the compiler.  For example, <code>[[optimize_for(probability, .99)]]</code> could indicate a very likely branch, <code>[[optimize_for(unpredictable)]]</code> could indicate that the branch predictor may have difficulties with this branch so predicated instructions may be preferred, and <code>[[optimize_for(low_latency)]]</code> could indicate that a particular path should be optimized so that when it is taken it is as fast as possible (even if it is rarely taken).
 </p>
 </blockquote>
 
 <p>
-<em>Question #2:</em> Why should branch hints be standardized when many compilers implement PGO?
+<em>Question #2:</em> Should indicating the probability of cases in a <code>switch</code> statement be supported?
+</p>
+<blockquote>
+<p>
+This certainly seems useful, and, in fact, Clang currently supports a limited version of this which allows a single case to be specified as likely: <code>switch(__builtin_expect(i, 42))</code>.  However, I do not know of any existing compiler that allows hints to be given for multiple cases.
+</p>
+
+<p>
+If this should be supported then should there be a fixed number of probabilities that cases can be annotated with (eg. 0-9) or should it be unlimited?
+</p>
+
+<p> 
+Another possibility would be to add an attribute to the <code>switch</code> which would indicate that the cases are in order from highest to lowest probability.
+</p>
+</blockquote>
+
+
+<h3>Possible Objections</h3>
+
+<p>
+<em>Objection #1:</em> Can this feature easily result in code pessimization?
+</p>
+<blockquote>
+<p>
+Yes, as shown by the conditional move example misusing a branch hint can definitely result in worse code with a much longer run time.  This feature is primarily meant to be used after a hotspot has been found in existing code.  It is not meant to be added to code just because a programmer "thinks" it will help.
+</p>
+</blockquote>
+
+<p>
+<em>Objection #2:</em> Why should branch hints be standardized when many compilers implement PGO?
 </p>
 <blockquote>
 <p>
@@ -275,33 +341,18 @@ Branch hints are definitely not meant to replace PGO; if PGO can be used it shou
 Also, PGO is not always easy to use.  PGO necessitates creating a realistic test scenario to profile which, depending on the application, may be difficult and opens up the possibility that some important real world usage may be missed.  The additional build tooling to keep the profile up to date, particularly across multiple OS's and compilers may also be challenging. 
 </p>
 <p>
-Additionally, certain kinds of applications, such as ones which may be distributed to clients who then build and run their own plugins in the distributed application may be very difficult or impossible to generate a realistic benchmark for as there is no way of knowing how the client will use the application.
+Additionally, certain kinds of applications, such as those which may be distributed to clients who then build and run their own plugins in the distributed application may be very difficult or impossible to generate a realistic benchmark for, as there is no way of knowing how the client will use the application.  Similar problems could also occur if an application is highly configurable; creating test scenarios and builds for different possible configurations may not be realistic.
+</p>
+<p>
+Finally, PGO sometimes does the exact opposite of what is wanted for certain low-latency use cases.  PGO tries to make the common case faster, but it may actually be more important to make the uncommon cases faster so that when they do occur they run as quickly as possible.
 </p>
 </blockquote>
 
-<p>
-<em>Question #3:</em> Can this feature easily result in code pessimization?
-</p>
-<blockquote>
-<p>
-Yes, as shown by the conditional move example misusing a branch hint can definitely result in worse code with a much larger run time.  This feature is primarily meant to be used after a profiler has shown a hotspot in existing code.  It is not meant to be added to code just because a programmer "thinks" it will help.
-</p>
-</blockquote>
-
-<p>
-<em>Question #4:</em> Why were the names <code>likely/unlikely</code> chosen?
-</p>
-<blockquote>
-<p>
-These names seem to be the most common ones found in existing code bases using this functionality.  I expect the names will receive a lot of bikeshedding and will certainly update the proposal if the consensus is to use different names.
-</p>
-</blockquote>
-
-<!--
 <h2 id="spec">VI. Technical Specifications</h2>
+TODO
 
 <h2 id="acknowledgements">VII. Acknowledgements</h2>
--->
+Thank you to Bartosz Bielecki, Carl Cook, Matt Dziubinski, Mathias Gaunard, Paul Hampson, and others on the SG14 mailing list for sharing their insights and suggestions.
 
 <h2 id="references">VIII. References</h2>
 
@@ -357,7 +408,18 @@ These names seem to be the most common ones found in existing code bases using t
   <li>
     <a href="https://reviews.llvm.org/D19488">https://reviews.llvm.org/D19488</a>
   </li>
+  
+  <li>
+    <a href="http://clang.llvm.org/docs/LanguageExtensions.html#builtin-unpredictable">http://clang.llvm.org/docs/LanguageExtensions.html#builtin-unpredictable</a>
+  </li>
 
+  <li>
+    <a href="https://www.princeton.edu/~rblee/ELE572Papers/the-effects-of-predicated.pdf">https://www.princeton.edu/~rblee/ELE572Papers/the-effects-of-predicated.pdf</a>
+  </li>
+  
+  <li>
+    <a href="http://web.calstatela.edu/faculty/nwarter/courses/EE548/papers/br_pred.pdf">http://web.calstatela.edu/faculty/nwarter/courses/EE548/papers/br_pred.pdf</a>
+  </li>
 </ol>
 
 <h2 id="appendix_A">Appendix A</h2>
