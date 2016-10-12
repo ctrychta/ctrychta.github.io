@@ -69,7 +69,7 @@ span.foot:before {
 </head>
 <body>
 Document number: DnnnnR0<br/>
-Date: 2016-09-10<br/>
+Date: 2016-10-11<br/>
 Project: Programming Language C++ - Evolution, SG14<br/>
 Reply-to: Clay Trychta &lt;clay.trychta@gmail.com&gt;<br/>
 
@@ -242,6 +242,51 @@ The results show that if almost all values (99%+) will take a particular branch 
 </table>
 
 <p>
+Finally, the impact of <code>__builtin_expect</code> was measured on two open source projects since their code should be a bit closer to what would be seen in actual codebases than the previous examples.
+</p>
+
+<p>
+The first test used <a href="https://github.com/zeux/pugixml">pugixml</a> to parse an <a href="http://www.ins.cwi.nl/projects/xmark/Assets/standard.gz">example</a> XMark file from memory.
+</p>
+
+<p>
+The subsequent tests ran the bench.c benchmark from <a href="https://github.com/h2o/picohttpparser">picohttpparser</a>.  These tests were run with and without <code>-march=native</code>.
+</p>
+
+<p>
+All of the tests were run without using <code>__builtin_expect</code>, using <code>__builtin_expect</code> with the opposite values (1 for unlikely and 0 for likely), and using <code>__builtin_expect</code> with the proper values (0 for unlikely and 1 for likely).
+</p>
+
+<p>The tests show that proper usage of <code>__builtin_expect</code> can have a positive impact on runtime performance.</p>
+
+<table>
+  <tr>
+    <th>Case</th>
+    <th>No expect</th>
+    <th>Opposite expect</th>
+    <th>Regular expect</th>
+  </tr>
+  <tr class="stripe">
+    <td>pugixml</td>
+    <td>126.0936 ms</td>
+    <td>128.6235 ms (+2.5299)</td>
+    <td>122.7716 ms (-3.322)</td>
+  </tr>
+  <tr>
+    <td>picohttpparser -march=native</td>
+    <td>1.7857 s</td>
+    <td>1.7763 s (-0.0094)</td>
+    <td>1.7119 s (-0.0738)</td>
+  </tr>
+  <tr class="stripe">
+    <td>picohttpparser</td>
+    <td>3.5989 s</td>
+    <td>3.7150 s (+0.1161)</td>
+    <td>3.0369 s (-0.562)</td>
+  </tr>
+</table>
+
+<p>
 The preceding examples show that allowing the programmer to specify branch hints can lead to improved code generation and decreased run time.  Due to these potential benefits this proposal aims to standardize the common likely/unlikely usage pattern so it can be used in a portable manner across compilers without macros. It also hopes to serve as encouragement for more compilers to implement this functionality.       
 </p>
 
@@ -272,52 +317,8 @@ From discussions regarding this proposal it seems that there are several related
 </ul>
 
 <p>
-This proposal currently focuses solving the first of the above cases.
+This proposal currently focuses on solving the first of the above cases as support for such annotations already exist in at least two compilers and their usage is relatively widespread.  The other cases either have limited (eg. <code>__builtin_unpredictable</code> in Clang) or no support in existing compilers which makes it more difficult to judge the benefits of any particular approach to solving those cases <span class="foot"></span>.  
 </p>
-
-<p>
-The benefits of the second case would likely revolve around helping the compiler to decide whether it is preferable to generate branches or predicated instructions.  There is some implementation experience for this case via <code>__builtin_unpredictable</code> in Clang which is used to indicate that a branch is unpredictable by the branch predictor which can result in generated code using predicated instructions instead of the compare/jump that would have been generated otherwise <span class="foot"></span>.  Research in this area has found that using predicated instructions can "have a significant impact on the performance of most high-performance architectures" due to reducing the number of unpredictable branches which can increase instruction level parallelism <span class="foot"></span><span class="foot"></span>.  If there is interest I can certainly add support for this case to the proposal.
-</p>
-
-<p>
-I am not aware of any existing way to indicate the third case to compilers so support for this case would most likely need to be implemented in a compiler in order to gain some real world experience with it before proposing it for standardization. 
-</p>
-
-<h3>Open Questions</h3>
-
-<p>
-<em>Question #1:</em> What should the attribute(s) be called and how should they work?
-</p>
-<blockquote>
-<p>
-The names <code>[[likely]]</code> and <code>[[unlikely]]</code> seem to be the most common ones given to the macros in existing code bases which implement the proposed functionality.  However, there are certainly many other possibilities some of which include:
-<ul>
-  <li><code>[[optimize_for(likely/unlikely)]]</code></li>
-  <li><code>[[behaviour(probability, .99)]]</code></li>
-  <li><code>[[expect(true/false)]]</code></li>
-  <li><code>[[hot_path/cold_path]]</code></li>
-</ul>
-Some of the alternatives, particularly <code>optimize_for/behaviour</code>, could be used to give even more information to the compiler.  For example, <code>[[optimize_for(probability, .99)]]</code> could indicate a very likely branch, <code>[[optimize_for(unpredictable)]]</code> could indicate that the branch predictor may have difficulties with this branch so predicated instructions may be preferred, and <code>[[optimize_for(low_latency)]]</code> could indicate that a particular path should be optimized so that when it is taken it is as fast as possible (even if it is rarely taken).
-</p>
-</blockquote>
-
-<p>
-<em>Question #2:</em> Should indicating the probability of cases in a <code>switch</code> statement be supported?
-</p>
-<blockquote>
-<p>
-This certainly seems useful, and, in fact, Clang currently supports a limited version of this which allows a single case to be specified as likely: <code>switch(__builtin_expect(i, 42))</code>.  However, I do not know of any existing compiler that allows hints to be given for multiple cases.
-</p>
-
-<p>
-If this should be supported then should there be a fixed number of probabilities that cases can be annotated with (eg. 0-9) or should it be unlimited?
-</p>
-
-<p> 
-Another possibility would be to add an attribute to the <code>switch</code> which would indicate that the cases are in order from highest to lowest probability.
-</p>
-</blockquote>
-
 
 <h3>Possible Objections</h3>
 
@@ -341,7 +342,7 @@ Branch hints are definitely not meant to replace PGO; if PGO can be used it shou
 Also, PGO is not always easy to use.  PGO necessitates creating a realistic test scenario to profile which, depending on the application, may be difficult and opens up the possibility that some important real world usage may be missed.  The additional build tooling to keep the profile up to date, particularly across multiple OS's and compilers may also be challenging. 
 </p>
 <p>
-Additionally, certain kinds of applications, such as those which may be distributed to clients who then build and run their own plugins in the distributed application may be very difficult or impossible to generate a realistic benchmark for, as there is no way of knowing how the client will use the application.  Similar problems could also occur if an application is highly configurable; creating test scenarios and builds for different possible configurations may not be realistic.
+Additionally, certain kinds of applications, such as those which may be distributed to clients who then build and run their own plugins in the distributed application may be very difficult or impossible to generate a realistic benchmark for, as there is no way of knowing how the client will use the application.  Similar problems could also occur if an application is highly configurable; creating test scenarios and builds for all different possible configurations may not be realistic.
 </p>
 <p>
 Finally, PGO sometimes does the exact opposite of what is wanted for certain low-latency use cases.  PGO tries to make the common case faster, but it may actually be more important to make the uncommon cases faster so that when they do occur they run as quickly as possible.
@@ -349,10 +350,10 @@ Finally, PGO sometimes does the exact opposite of what is wanted for certain low
 </blockquote>
 
 <h2 id="spec">VI. Technical Specifications</h2>
-TODO
+<p>TODO</p>
 
 <h2 id="acknowledgements">VII. Acknowledgements</h2>
-Thank you to Bartosz Bielecki, Carl Cook, Matt Dziubinski, Mathias Gaunard, Paul Hampson, and others on the SG14 mailing list for sharing their insights and suggestions.
+Thank you to Bartosz Bielecki, Carl Cook, Matt Dziubinski, Mathias Gaunard, Paul Hampson, and others in SG14 for sharing their insights and suggestions.
 
 <h2 id="references">VIII. References</h2>
 
@@ -411,14 +412,6 @@ Thank you to Bartosz Bielecki, Carl Cook, Matt Dziubinski, Mathias Gaunard, Paul
   
   <li>
     <a href="http://clang.llvm.org/docs/LanguageExtensions.html#builtin-unpredictable">http://clang.llvm.org/docs/LanguageExtensions.html#builtin-unpredictable</a>
-  </li>
-
-  <li>
-    <a href="https://www.princeton.edu/~rblee/ELE572Papers/the-effects-of-predicated.pdf">https://www.princeton.edu/~rblee/ELE572Papers/the-effects-of-predicated.pdf</a>
-  </li>
-  
-  <li>
-    <a href="http://web.calstatela.edu/faculty/nwarter/courses/EE548/papers/br_pred.pdf">http://web.calstatela.edu/faculty/nwarter/courses/EE548/papers/br_pred.pdf</a>
   </li>
 </ol>
 
