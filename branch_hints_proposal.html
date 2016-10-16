@@ -64,12 +64,21 @@ span.foot:before {
 	content: "[" counter(end_note_counter) "]";	
 }
 
+ins { 
+  text-decoration:none; 
+  background-color:#A0FFA0 
+}
+
+.mono {
+  font-family: monospace, monospace;
+}
+
 </style>
 
 </head>
 <body>
 Document number: DnnnnR0<br/>
-Date: 2016-10-11<br/>
+Date: 2016-10-16<br/>
 Project: Programming Language C++ - Evolution, SG14<br/>
 Reply-to: Clay Trychta &lt;clay.trychta@gmail.com&gt;<br/>
 
@@ -122,7 +131,7 @@ Some of the possible code generation improvements from using branch probability 
 </ul>
 
 <p>
-Since this proposal has made claims about the potential to improve generated code and performance I have created a couple of small examples showing the possible benefits.  All testing was performed with the GCC 6.1.1 20160621 compiler and run on a Xeon E3 1245 v3.  All examples were compiled with <code>-O3 -march=haswell</code> plus defines to control behavior and some other test specific flags mentioned below.  Tests were run three times using <code>perf stat</code> and the median value was taken.
+Since this proposal has made claims about the potential to improve generated code and performance I have created a few small examples showing the possible benefits.  All testing was performed with the GCC 6.1.1 20160621 compiler and run on a Xeon E3 1245 v3.  All examples were compiled with <code>-O3 -march=haswell</code> plus defines to control behavior and some other test specific flags mentioned below.  Tests were run three times using <code>perf stat</code> and the median value was taken.
 </p>
 
 <p>
@@ -183,7 +192,7 @@ This <a href="#appendix_A">first example</a> examines clamping integer values in
 </table>
 
 <p>
-The <a href="#appendix_B">next example</a> examines the tradeoffs between using conditional move and compare/jump.  This time the code was compiled without hints, with a hint to expect the comparison to succeed, and with a hint to expect the comparison to fail.  The compiled example was then run with various percentages of values for which the comparison would succeed.  I was unable to get GCC to stop generating conditional move instructions using only <code>__builtin_expect</code> so I compiled with <code>-fno-if-conversion -fno-tree-loop-if-convert</code> to simulate it.  Recent versions of Clang (3.9) will generate code using comparison and jumps based on the usage of <code>__builtin_expect</code><span class="foot"></span>.
+The <a href="#appendix_B">next example</a> examines the tradeoffs between using conditional move and compare/jump.  This time the code was compiled without hints, with a hint to expect the comparison to succeed, and with a hint to expect the comparison to fail.  The compiled example was then run with various percentages of values for which the comparison would succeed.  I was unable to get GCC to stop generating conditional move instructions using only <code>__builtin_expect</code> so I compiled with <code>-fno-if-conversion -fno-tree-loop-if-convert</code> to simulate it.  Recent versions of Clang (3.9+) change from generating conditional moves to comparison and jumps based on the usage of <code>__builtin_expect</code><span class="foot"></span>.
 </p>
 
 <p>
@@ -250,14 +259,14 @@ The first test used <a href="https://github.com/zeux/pugixml">pugixml</a> to par
 </p>
 
 <p>
-The subsequent tests ran the bench.c benchmark from <a href="https://github.com/h2o/picohttpparser">picohttpparser</a>.  These tests were run with and without <code>-march=native</code>.
+The subsequent tests ran the bench.c benchmark from <a href="https://github.com/h2o/picohttpparser">picohttpparser</a>.  These tests were run with and without <code>-march=haswell</code>.
 </p>
 
 <p>
 All of the tests were run without using <code>__builtin_expect</code>, using <code>__builtin_expect</code> with the opposite values (1 for unlikely and 0 for likely), and using <code>__builtin_expect</code> with the proper values (0 for unlikely and 1 for likely).
 </p>
 
-<p>The tests show that proper usage of <code>__builtin_expect</code> can have a positive impact on runtime performance.</p>
+<p>These tests show that proper usage of <code>__builtin_expect</code> can have a positive impact on runtime performance.</p>
 
 <table>
   <tr>
@@ -273,7 +282,7 @@ All of the tests were run without using <code>__builtin_expect</code>, using <co
     <td>122.7716 ms (-3.322)</td>
   </tr>
   <tr>
-    <td>picohttpparser -march=native</td>
+    <td>picohttpparser -march=haswell</td>
     <td>1.7857 s</td>
     <td>1.7763 s (-0.0094)</td>
     <td>1.7119 s (-0.0738)</td>
@@ -327,7 +336,7 @@ This proposal currently focuses on solving the first of the above cases as suppo
 </p>
 <blockquote>
 <p>
-Yes, as shown by the conditional move example misusing a branch hint can definitely result in worse code with a much longer run time.  This feature is primarily meant to be used after a hotspot has been found in existing code.  It is not meant to be added to code just because a programmer "thinks" it will help.
+Yes, as shown by the conditional move example misusing a branch hint can definitely result in worse code with a much longer run time.  This feature is primarily meant to be used after a hotspot has been found in existing code.  The proposed attributes are not meant to be added to code without measuring the impact to ensure they do not end up degrading performance.
 </p>
 </blockquote>
 
@@ -350,7 +359,78 @@ Finally, PGO sometimes does the exact opposite of what is wanted for certain low
 </blockquote>
 
 <h2 id="spec">VI. Technical Specifications</h2>
-<p>TODO</p>
+<p>In section 6 (stmt.stmt) paragraph 1, change the grammar to allow an optional attribute in conditions consisting of an expression.</p>
+
+<blockquote>
+<pre style="background:none"><em>condition:
+    <ins>attribute-specifier-seq<sub>opt</sub></ins> expression</em></pre>
+</blockquote>
+
+<p>Add the <code>likely</code> attribute.</p>
+
+<p>
+<ins>7.6.N Likely attribute [dcl.attr.likely]</ins>
+</p>
+
+<p>
+<ins>
+The <em>attribute-token</em> <span class="mono">likely</span> indicates that an expression has a high probability of being true.  It shall appear at most once in each <em>attribute-list</em> and no <em>attribute-argument-clause</em> shall be present.
+</ins>
+</p>
+
+<p>
+<ins>
+The attribute may be applied to the condition of an <span class="mono">if</span> statement.
+</ins>
+</p>
+
+<p>
+<ins>
+[ <em>Note:</em> Implementations are encouraged to use the <span class="mono">likely</span> attribute as a hint for optimization purposes <em>&mdash; end note</em>]
+</ins>
+</p>
+
+<p>
+<ins>[ <em>Example:</em></ins>
+<pre style="background:none"><ins>if ([[likely]] foo()) {
+  do_something();
+}
+</ins></pre>
+<ins>Implementations are encouraged to optimize for the case where foo() returns true. <em>&mdash; end example</em>]</ins>
+</p>
+
+<p>Add the <code>unlikely</code> attribute.</p>
+
+<p>
+<ins>7.6.N Unlikely attribute [dcl.attr.unlikely]</ins>
+</p>
+
+<p>
+<ins>
+The <em>attribute-token</em> <span class="mono">unlikely</span> indicates that an expression has a high probability of being false.  It shall appear at most once in each <em>attribute-list</em> and no <em>attribute-argument-clause</em> shall be present.
+</ins>
+</p>
+
+<p>
+<ins>
+The attribute may be applied to the condition of an <span class="mono">if</span> statement.
+</ins>
+</p>
+
+<p>
+<ins>
+[ <em>Note:</em> Implementations are encouraged to use the <span class="mono">unlikely</span> attribute as a hint for optimization purposes <em>&mdash; end note</em>]
+</ins>
+</p>
+
+<p>
+<ins>[ <em>Example:</em></ins>
+<pre style="background:none"><ins>if ([[unlikely]] foo()) {
+  do_something();
+}
+</ins></pre>
+<ins>Implementations are encouraged to optimize for the case where foo() returns false. <em>&mdash; end example</em>]</ins>
+</p>
 
 <h2 id="acknowledgements">VII. Acknowledgements</h2>
 Thank you to Bartosz Bielecki, Carl Cook, Matt Dziubinski, Mathias Gaunard, Paul Hampson, and others in SG14 for sharing their insights and suggestions.
