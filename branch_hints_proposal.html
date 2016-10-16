@@ -266,7 +266,7 @@ The subsequent tests ran the bench.c benchmark from <a href="https://github.com/
 All of the tests were run without using <code>__builtin_expect</code>, using <code>__builtin_expect</code> with the opposite values (1 for unlikely and 0 for likely), and using <code>__builtin_expect</code> with the proper values (0 for unlikely and 1 for likely).
 </p>
 
-<p>These tests show that proper usage of <code>__builtin_expect</code> can have a positive impact on runtime performance.</p>
+<p>These tests show that proper usage of <code>__builtin_expect</code> can have a positive impact on runtime performance.  For the cases where the measured times are relatively close together I was able to run each version repeatedly and saw very similar numbers to what is reported below so the differences do seem to be real.</p>
 
 <table>
   <tr>
