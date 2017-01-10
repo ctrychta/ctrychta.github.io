@@ -89,7 +89,7 @@ Reply-to: Clay Trychta &lt;clay.trychta@gmail.com&gt;<br/>
   <li> Revision 1:
     <ul>
       <li>The attributes now target statements instead of expressions.</li>
-      <li>The attributes may now be used with <code>case</code> and <code>default</code> inside switch statements.</li>
+      <li>The attributes may now be used with iteration statements and <code>case</code>/<code>default</code> inside switch statements.</li>
     </ul>
   </li>
 </ul>
@@ -372,9 +372,20 @@ Finally, PGO sometimes does the exact opposite of what is wanted for certain low
 <p>In section 6.4 (stmt.select) paragraph 1, change the grammar to allow an optional attribute before the substatement of an <span class="mono">if</span> statement.</p>
 
 <blockquote>
-<pre style="background:none"><em>selection-statement:
-    <strong>if constexpr</strong><sub><em>opt</em></sub> ( <em>init-statement<sub>opt</sub> condition</em> ) <ins>attribute-specifier-seq<sub>opt</sub></ins> <em>statement</em>
-    <strong>if constexpr</strong><sub><em>opt</em></sub> ( <em>init-statement<sub>opt</sub> condition</em> ) <ins>attribute-specifier-seq<sub>opt</sub></ins> <em>statement</em> <strong>else</strong> <ins>attribute-specifier-seq<sub>opt</sub></ins> <em>statement</em>
+<pre style="background:none"><em>selection-statement:</em>
+    <strong>if constexpr</strong><sub><em>opt</em></sub> ( <em>init-statement<sub>opt</sub> condition</em> ) <ins><em>attribute-specifier-seq<sub>opt</sub></em></ins> <em>statement</em>
+    <strong>if constexpr</strong><sub><em>opt</em></sub> ( <em>init-statement<sub>opt</sub> condition</em> ) <ins><em>attribute-specifier-seq<sub>opt</sub></em></ins> <em>statement</em> <strong>else</strong> <ins><em>attribute-specifier-seq<sub>opt</sub></em></ins> <em>statement</em>
+</pre>
+</blockquote>
+
+<p>In section 6.5 (stmt.iter) paragraph 1, change the grammar to allow an optional attribute before the substatement of <span class="mono">while</span>, <span class="mono">do</span>, and <span class="mono">for</span> statements.</p>
+
+<blockquote>
+<pre style="background:none"><em>iteration-statement:</em>
+    <strong>while</strong> ( <em>condition</em> ) <ins><em>attribute-specifier-seq<sub>opt</sub></em></ins> <em>statement</em>
+    <strong>do</strong> <ins><em>attribute-specifier-seq<sub>opt</sub></em></ins> <em>statement</em> <strong>while</strong> ( <em>expression</em> ) ;
+    <strong>for</strong> ( <em>init-statement condition<sub>opt</sub>; expression<sub>opt</sub></em> ) <ins><em>attribute-specifier-seq<sub>opt</sub></em></ins> <em>statement</em>
+    <strong>for</strong> ( <em>for-range-declaration</em> : <em>for-range-initializer</em> ) <ins><em>attribute-specifier-seq<sub>opt</sub></em></ins> <em>statement</em>
 </pre>
 </blockquote>
 
@@ -392,7 +403,7 @@ The <em>attribute-token</em> <span class="mono">likely</span> indicates that a s
 
 <p>
 <ins>
-The attribute may be applied to the first substatement of an <span class="mono">if</span> statement, the second substatement (the one after the <span class="mono">else</span>) when the following statement is not an <span class="mono">if</span>, or to labeled statements whose label is case or default.
+The attribute may be applied to the first substatement of an <span class="mono">if</span> statement, the second substatement (the one after the <span class="mono">else</span>) when the following statement is not an <span class="mono">if</span>, to labeled statements whose label is case or default, or before the substatement of an iteration statement.
 </ins>
 </p>
 
@@ -425,7 +436,7 @@ The <em>attribute-token</em> <span class="mono">unlikely</span> indicates that a
 
 <p>
 <ins>
-The attribute may be applied to the first substatement of an <span class="mono">if</span> statement, the second substatement (the one after the <span class="mono">else</span>) when the following statement is not an <span class="mono">if</span>, or to labeled statements whose label is case or default.
+The attribute may be applied to the first substatement of an <span class="mono">if</span> statement, the second substatement (the one after the <span class="mono">else</span>) when the following statement is not an <span class="mono">if</span>, to labeled statements whose label is case or default, or before the substatement of an iteration statement.
 </ins>
 </p>
 
