@@ -78,7 +78,7 @@ ins {
 </head>
 <body>
 Document number: PnnnnR1<br/>
-Date: 2017-01-08<br/>
+Date: 2017-01-30<br/>
 Audience: Evolution Working Group, SG14<br/>
 Reply-to: Clay Trychta &lt;clay.trychta@gmail.com&gt;<br/>
 
@@ -369,7 +369,7 @@ Finally, PGO sometimes does the exact opposite of what is wanted for certain low
 </blockquote>
 
 <h2 id="spec">VI. Technical Specifications</h2>
-<p>In section 6.4 (stmt.select) paragraph 1, change the grammar to allow an optional attribute before the substatement of an <span class="mono">if</span> statement.</p>
+<p>In section 6.4 (stmt.select) paragraph 1, change the grammar to allow an optional attribute before the substatements of <span class="mono"><em>selection-statements</em></span>.</p>
 
 <blockquote>
 <pre style="background:none"><em>selection-statement:</em>
@@ -397,19 +397,19 @@ Finally, PGO sometimes does the exact opposite of what is wanted for certain low
 
 <p>
 <ins>
-The <em>attribute-token</em> <span class="mono">likely</span> indicates that a statement has a high probability of being executed.  It shall appear at most once in each <em>attribute-list</em> and no <em>attribute-argument-clause</em> shall be present.
+The <em>attribute-token</em> <span class="mono"><strong>likely</strong></span> indicates that a statement has a high probability of being executed.  It shall appear at most once in each <em>attribute-list</em> and no <em>attribute-argument-clause</em> shall be present.  The <span class="mono"><strong>likely</strong></span> attribute may not appear in the same <em>attribute-list</em> as the <span class="mono"><strong>unlikely</strong></span> attribute.
 </ins>
 </p>
 
 <p>
 <ins>
-The attribute may be applied to the first substatement of an <span class="mono">if</span> statement, the second substatement (the one after the <span class="mono">else</span>) when the following statement is not an <span class="mono">if</span>, to labeled statements whose label is case or default, or before the substatement of an iteration statement.
+The attribute may be applied to the substatements of selection-statements, to labeled-statements whose label is case or default, or to the substatement of an iteration statement.
 </ins>
 </p>
 
 <p>
 <ins>
-[ <em>Note:</em> Implementations are encouraged to use the <span class="mono">likely</span> attribute as a hint for optimization purposes <em>&mdash; end note</em>]
+[ <em>Note:</em> Implementations are encouraged to use the <span class="mono"><strong>likely</strong></span> attribute as a hint for optimization purposes <em>&mdash; end note</em>]
 </ins>
 </p>
 
@@ -430,19 +430,19 @@ The attribute may be applied to the first substatement of an <span class="mono">
 
 <p>
 <ins>
-The <em>attribute-token</em> <span class="mono">unlikely</span> indicates that an expression has a low probability of being executed.  It shall appear at most once in each <em>attribute-list</em> and no <em>attribute-argument-clause</em> shall be present.
+The <em>attribute-token</em> <span class="mono"><strong>unlikely</strong></span> indicates that a statement has a low probability of being executed.  It shall appear at most once in each <em>attribute-list</em> and no <em>attribute-argument-clause</em> shall be present.  The <span class="mono"><strong>unlikely</strong></span> attribute may not appear in the same <em>attribute-list</em> as the <span class="mono"><strong>likely</strong></span> attribute.
 </ins>
 </p>
 
 <p>
 <ins>
-The attribute may be applied to the first substatement of an <span class="mono">if</span> statement, the second substatement (the one after the <span class="mono">else</span>) when the following statement is not an <span class="mono">if</span>, to labeled statements whose label is case or default, or before the substatement of an iteration statement.
+The attribute may be applied to the substatements of selection-statements, to labeled-statements whose label is case or default, or to the substatement of an iteration statement.
 </ins>
 </p>
 
 <p>
 <ins>
-[ <em>Note:</em> Implementations are encouraged to use the <span class="mono">unlikely</span> attribute as a hint for optimization purposes <em>&mdash; end note</em>]
+[ <em>Note:</em> Implementations are encouraged to use the <span class="mono"><strong>unlikely</strong></span> attribute as a hint for optimization purposes <em>&mdash; end note</em>]
 </ins>
 </p>
 
