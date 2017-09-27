@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Attributes for Likely and Unlikely Branches</title>
+<title>Attributes for Likely and Unlikely Statements</title>
 
 <style type="text/css">
 html {
@@ -57,11 +57,11 @@ tr.stripe {
 
 span.foot:before {
   font-size: smaller;
-	margin-left: .3em;
-	vertical-align: super;
-	line-height: 0;
-	counter-increment: end_note_counter;
-	content: "[" counter(end_note_counter) "]";	
+  margin-left: .3em;
+  vertical-align: super;
+  line-height: 0;
+  counter-increment: end_note_counter;
+  content: "[" counter(end_note_counter) "]";
 }
 
 ins { 
@@ -77,15 +77,20 @@ ins {
 
 </head>
 <body>
-Document number: PnnnnR1<br/>
-Date: 2017-01-30<br/>
+Document number: P0479RN<br/>
+Date: 2017-09-26<br/>
 Audience: Evolution Working Group, SG14<br/>
 Reply-to: Clay Trychta &lt;clay.trychta@gmail.com&gt;<br/>
 
-<h1>Attributes for Likely and Unlikely Branches (Revision 1)</h1> 
+<h1>Attributes for Likely and Unlikely Statements (Revision N)</h1> 
 
 <h2>Revision History</h2>
 <ul>
+  <li> Revision 2:
+    <ul>
+      <li>The attributes now target all statements.</li>
+    </ul>
+  </li>
   <li> Revision 1:
     <ul>
       <li>The attributes now target statements instead of expressions.</li>
@@ -108,13 +113,13 @@ Reply-to: Clay Trychta &lt;clay.trychta@gmail.com&gt;<br/>
 <h2 id="intro">II. Introduction</h2>
 
 <p>
-Two new attributes <code>[[likely]]</code> and <code>[[unlikely]]</code> are proposed. These attributes will serve as hints on the likelihood that a subsequent branch is taken.  Compilers may use these hints to improve the code they generate in various ways.  
+Two new attributes <code>[[likely]]</code> and <code>[[unlikely]]</code> are proposed. These attributes will serve as hints on the likelihood that a subsequent statement will be executed.  Compilers may use these hints to improve the code they generate in various ways.  
 </p>
 
 <h2>III. Motivation and Scope</h2>
 
 <p>
-Compiler's optimizers often have no information relating to branch probability which can lead to suboptimal code generation.  In many cases the excellent dynamic branch predictors on modern processors can make up for this lack of information.  However, in some cases code may execute more slowly than necessary even though the programmer knew the probability of particular branches being executed because they did not have an easy way to communicate this to the compiler.  
+Compiler's optimizers often have no information relating to the probability of particular statements being executed which can lead to suboptimal code generation.  In many cases the excellent dynamic branch predictors on modern processors can make up for this lack of information.  However, in some cases code may execute more slowly than necessary even though the programmer knew the probability of particular branches being executed because they did not have an easy way to communicate this to the compiler.  
 </p>
 
 <p>
@@ -325,7 +330,7 @@ From discussions regarding this proposal it seems that there are several related
 
 <ul>
   <li>
-    Annotating branches that are very likely or unlikely to be true.  
+    Annotating statements which are very likely or unlikely to execute.
   </li>
   <li>
     Indicating whether or not a branch is predictable.  This is useful in cases where it is known ahead of time that the values being branched on are going to follow a predictable pattern, but a particular direction does not have a high likelihood (in which case likely/unlikely could be used). 
@@ -369,16 +374,44 @@ Finally, PGO sometimes does the exact opposite of what is wanted for certain low
 </blockquote>
 
 <h2 id="spec">VI. Technical Specifications</h2>
-<p>In section 6.4 (stmt.select) paragraph 1, change the grammar to allow an optional attribute before the substatements of <span class="mono"><em>selection-statements</em></span>.</p>
+
+<p>In section 9.1 (stmt.label) paragraph 1, change the grammar to allow an optional attribute before the substatements of <span class="mono">label</span> statements.</p>
+
+<blockquote>
+<pre style="background:none"><em>labeled-statement:
+    <em>attribute-specifier-seq<sub>opt</sub></em> <em>identifier</em> : <ins>attribute-specifier-seq<sub>opt</sub></ins> statement
+    <em>attribute-specifier-seq<sub>opt</sub></em> <strong>case</strong> <em>constant-expression</em> : <ins>attribute-specifier-seq<sub>opt</sub></ins> statement
+    <em>attribute-specifier-seq<sub>opt</sub></em> <strong>default</strong> <em>constant-expression</em> : <ins>attribute-specifier-seq<sub>opt</sub></ins> statement
+</pre>
+</blockquote>
+
+<p>In section 9.2 (stmt.expr) paragraph 1, change the grammar to allow an optional attribute before the expression of <span class="mono">expression</span> statements.</p>
+
+<blockquote>
+<pre style="background:none"><em>expression-statement:
+    <ins>attribute-specifier-seq<sub>opt</sub></ins> <em>expression<sub>opt</sub></em> ;
+</pre>
+</blockquote>
+
+<p>In section 9.3 (stmt.block) paragraph 1, change the grammar to allow an optional attribute before the substatements of <span class="mono">compound</span> statements.</p>
+
+<blockquote>
+<pre style="background:none"><em>compound-statement:
+    <ins>attribute-specifier-seq<sub>opt</sub></ins> { <em>statement-seq<sub>opt</sub></em> }
+</pre>
+</blockquote>
+
+<p>In section 9.4 (stmt.select) paragraph 1, change the grammar to allow an optional attribute before the substatements of <span class="mono"><em>selection-statements</em></span>.</p>
 
 <blockquote>
 <pre style="background:none"><em>selection-statement:</em>
     <strong>if constexpr</strong><sub><em>opt</em></sub> ( <em>init-statement<sub>opt</sub> condition</em> ) <ins><em>attribute-specifier-seq<sub>opt</sub></em></ins> <em>statement</em>
     <strong>if constexpr</strong><sub><em>opt</em></sub> ( <em>init-statement<sub>opt</sub> condition</em> ) <ins><em>attribute-specifier-seq<sub>opt</sub></em></ins> <em>statement</em> <strong>else</strong> <ins><em>attribute-specifier-seq<sub>opt</sub></em></ins> <em>statement</em>
+    <strong>switch</strong> ( <em>init-statement<sub>opt</sub> condition</em> ) <ins><em>attribute-specifier-seq<sub>opt</sub></em></ins> <em>statement</em>
 </pre>
 </blockquote>
 
-<p>In section 6.5 (stmt.iter) paragraph 1, change the grammar to allow an optional attribute before the substatement of <span class="mono">while</span>, <span class="mono">do</span>, and <span class="mono">for</span> statements.</p>
+<p>In section 9.5 (stmt.iter) paragraph 1, change the grammar to allow an optional attribute before the substatement of <span class="mono">while</span>, <span class="mono">do</span>, and <span class="mono">for</span> statements.</p>
 
 <blockquote>
 <pre style="background:none"><em>iteration-statement:</em>
@@ -389,21 +422,40 @@ Finally, PGO sometimes does the exact opposite of what is wanted for certain low
 </pre>
 </blockquote>
 
+<p>In section 9.6 (stmt.jump) paragraph 1, change the grammar to allow an optional attribute for each jump statement.</p>
+
+<blockquote>
+<pre style="background:none"><em>jump-statement:</em>
+    <strong>break</strong> <ins><em>attribute-specifier-seq<sub>opt</sub></em></ins> ;
+    <strong>continue</strong> <ins><em>attribute-specifier-seq<sub>opt</sub></em></ins> ;
+    <strong>return</strong> <ins><em>attribute-specifier-seq<sub>opt</sub></em></ins> <em>expr-or-braced-init-list<sub>opt</sub> ; 
+    <strong>goto</strong> <ins><em>attribute-specifier-seq<sub>opt</sub></em></ins> <em>identifier</em> ;
+</pre>
+</blockquote>
+
+<p>In section 9.7 (stmt.dcl) paragraph 1, change the grammar to allow an optional attribute.</p>
+
+<blockquote>
+<pre style="background:none"><em>declaration-statement:</em>
+    <ins><em>attribute-specifier-seq<sub>opt</sub></em></ins> <em>block-declaration</em>
+</pre>
+</blockquote>
+
 <p>Add the <code>likely</code> attribute.</p>
 
 <p>
-<ins>7.6.N Likely attribute [dcl.attr.likely]</ins>
+<ins>10.6.N Likely attribute [dcl.attr.likely]</ins>
 </p>
 
 <p>
 <ins>
-The <em>attribute-token</em> <span class="mono"><strong>likely</strong></span> indicates that a statement has a high probability of being executed.  It shall appear at most once in each <em>attribute-list</em> and no <em>attribute-argument-clause</em> shall be present.  The <span class="mono"><strong>likely</strong></span> attribute may not appear in the same <em>attribute-list</em> as the <span class="mono"><strong>unlikely</strong></span> attribute.
+The <em>attribute-token</em> <span class="mono"><strong>likely</strong></span> indicates that a statement has a high probability of being executed.  It shall appear at most once in each <em>attribute-list</em> and no <em>attribute-argument-clause</em> shall be present.  The <span class="mono"><strong>likely</strong></span> attribute is not allowed to appear in the same <em>attribute-list</em> as the <span class="mono"><strong>unlikely</strong></span> attribute.
 </ins>
 </p>
 
 <p>
 <ins>
-The attribute may be applied to the substatements of selection-statements, to labeled-statements whose label is case or default, or to the substatement of an iteration statement.
+The attribute may be applied to labeled, expression, compound, selection, iteration, jump, and declaration statements. 
 </ins>
 </p>
 
@@ -425,18 +477,18 @@ The attribute may be applied to the substatements of selection-statements, to la
 <p>Add the <code>unlikely</code> attribute.</p>
 
 <p>
-<ins>7.6.N Unlikely attribute [dcl.attr.unlikely]</ins>
+<ins>10.6.N Unlikely attribute [dcl.attr.unlikely]</ins>
 </p>
 
 <p>
 <ins>
-The <em>attribute-token</em> <span class="mono"><strong>unlikely</strong></span> indicates that a statement has a low probability of being executed.  It shall appear at most once in each <em>attribute-list</em> and no <em>attribute-argument-clause</em> shall be present.  The <span class="mono"><strong>unlikely</strong></span> attribute may not appear in the same <em>attribute-list</em> as the <span class="mono"><strong>likely</strong></span> attribute.
+The <em>attribute-token</em> <span class="mono"><strong>unlikely</strong></span> indicates that a statement has a low probability of being executed.  It shall appear at most once in each <em>attribute-list</em> and no <em>attribute-argument-clause</em> shall be present.  The <span class="mono"><strong>unlikely</strong></span> attribute is not allowed to appear in the same <em>attribute-list</em> as the <span class="mono"><strong>likely</strong></span> attribute.
 </ins>
 </p>
 
 <p>
 <ins>
-The attribute may be applied to the substatements of selection-statements, to labeled-statements whose label is case or default, or to the substatement of an iteration statement.
+The attribute may be applied to labeled, expression, compound, selection, iteration, jump, and declaration statements. 
 </ins>
 </p>
 
@@ -597,3 +649,4 @@ int main() {
 
 </body>
 </html>
+
