@@ -88,7 +88,9 @@ Reply-to: Clay Trychta &lt;clay.trychta@gmail.com&gt;<br/>
 <ul>
   <li> Revision 2:
     <ul>
-      <li>The attributes now target all statements.</li>
+      <li>Added open questions and example sections.</li>
+      <li>The attributes may now be applied to statements inside of a selection or iteration statement.</li>
+      <li>Add a note to discourage the general usage of these attributes.</li>
     </ul>
   </li>
   <li> Revision 1:
@@ -105,6 +107,8 @@ Reply-to: Clay Trychta &lt;clay.trychta@gmail.com&gt;<br/>
   <li><a href="#intro">Introduction</a></li>
   <li><a href="#impact">Impact On the Standard</a></li>
   <li><a href="#design">Design Decisions</a></li>
+  <li><a href="#open-questions">Open Questions</a></li>
+  <li><a href="#examples">Examples</a></li>
   <li><a href="#spec">Technical Specifications</a></li>
   <li><a href="#acknowledgements">Acknowledgements</a></li>
   <li><a href="#references">References</a></li>
@@ -373,73 +377,61 @@ Finally, PGO sometimes does the exact opposite of what is wanted for certain low
 </p>
 </blockquote>
 
-<h2 id="spec">VI. Technical Specifications</h2>
+<h2 id="open-questions">VI. Open Questions</h2>
 
-<p>In section 9.1 (stmt.label) paragraph 1, change the grammar to allow an optional attribute before the substatements of <span class="mono">label</span> statements.</p>
+<ul>
+  <li>
+    Previous feedback indicated that these attributes should apply to all statements.  Should they apply only to statements which currently allow attributes or should the grammar be adjusted to apply to <em>labeled-statement</em>s and <em>declaration-statement</em>s as well?  Allowing attributes for these statements could lead to two attributes in a row with different semantics.  For example in the follwing code [[likely]] applies to the <em>declaration</em> and [[maybe_unused]] applies to the <em>simple-declaration</em>:
+    <pre><code>if (foo()) [[likely]] [[maybe_unused]] auto a = bar();</code></pre>
+  </li>
+  <li>
+    The current proposal limits the attributes to being used inside of selection and iteration statements in an effort to prevent them from being placed in nonsensical places while still allowing them in the most common places they would be useful.  Is this desirable, or would it be preferable to enforce different or even no limitations on the locations where they are allowed?  One example which has come up in discussions which the current proposal would disallow is the following:
+    <pre><code>if (foo()) return false;
+if (bar()) return false;
+[[likely]] baz();</code></pre>
+    The above would need to be expressed as follows using the current proposal:
+    <pre><code>if (foo()) [unlikely]] return false;
+if (bar()) [[unlikely]] return false;
+baz();</code></pre>
+  </li>
+</ul>
 
-<blockquote>
-<pre style="background:none"><em>labeled-statement:
-    <em>attribute-specifier-seq<sub>opt</sub></em> <em>identifier</em> : <ins>attribute-specifier-seq<sub>opt</sub></ins> statement
-    <em>attribute-specifier-seq<sub>opt</sub></em> <strong>case</strong> <em>constant-expression</em> : <ins>attribute-specifier-seq<sub>opt</sub></ins> statement
-    <em>attribute-specifier-seq<sub>opt</sub></em> <strong>default</strong> <em>constant-expression</em> : <ins>attribute-specifier-seq<sub>opt</sub></ins> statement
-</pre>
-</blockquote>
+<h2 id="examples">VII. Examples</h2>
+<p>When a [[likely]] attributes appears in an if statement implementations are encouraged to optimize for the case where that statement is executed (eg. foo() returning true in the following code): </p>
+  <pre><code>if (foo()) {
+  [[likely]] baz();
+}  
+</code></pre>
 
-<p>In section 9.2 (stmt.expr) paragraph 1, change the grammar to allow an optional attribute before the expression of <span class="mono">expression</span> statements.</p>
+<p>When a [[likely]] attributes appears in a nested if statement implementations are encouraged to optimize for the case where that statement is executed (eg. foo() and bar() returning true in the following code): </p>
+  <pre><code>if (foo()) {
+  if (bar()) {
+    [[likely]] baz();
+  }
+}  
+</code></pre>
 
-<blockquote>
-<pre style="background:none"><em>expression-statement:
-    <ins>attribute-specifier-seq<sub>opt</sub></ins> <em>expression<sub>opt</sub></em> ;
-</pre>
-</blockquote>
+<p>When an [[unlikely]] attribute appears inside of a loop implementations are encouraged to optimize for the case where that statement is not executed (eg. foo() returning false in the following code): </p>
+  <pre><code>while (foo()) {
+  [[unlikely]] baz();
+}  
+</code></pre>
 
-<p>In section 9.3 (stmt.block) paragraph 1, change the grammar to allow an optional attribute before the substatements of <span class="mono">compound</span> statements.</p>
+<p>When a [[likely]] attribute appears inside of a switch case implementations are encouraged to optimize for that case being executed (eg. a having the value 1 in the following code): </p>
+  <pre><code>switch (a) {
+case 1: 
+  [[likely]] foo(); 
+  break;
+case 2:
+  bar();
+  break;
+default:
+  baz();
+  break;
+}  
+</code></pre>
 
-<blockquote>
-<pre style="background:none"><em>compound-statement:
-    <ins>attribute-specifier-seq<sub>opt</sub></ins> { <em>statement-seq<sub>opt</sub></em> }
-</pre>
-</blockquote>
-
-<p>In section 9.4 (stmt.select) paragraph 1, change the grammar to allow an optional attribute before the substatements of <span class="mono"><em>selection-statements</em></span>.</p>
-
-<blockquote>
-<pre style="background:none"><em>selection-statement:</em>
-    <strong>if constexpr</strong><sub><em>opt</em></sub> ( <em>init-statement<sub>opt</sub> condition</em> ) <ins><em>attribute-specifier-seq<sub>opt</sub></em></ins> <em>statement</em>
-    <strong>if constexpr</strong><sub><em>opt</em></sub> ( <em>init-statement<sub>opt</sub> condition</em> ) <ins><em>attribute-specifier-seq<sub>opt</sub></em></ins> <em>statement</em> <strong>else</strong> <ins><em>attribute-specifier-seq<sub>opt</sub></em></ins> <em>statement</em>
-    <strong>switch</strong> ( <em>init-statement<sub>opt</sub> condition</em> ) <ins><em>attribute-specifier-seq<sub>opt</sub></em></ins> <em>statement</em>
-</pre>
-</blockquote>
-
-<p>In section 9.5 (stmt.iter) paragraph 1, change the grammar to allow an optional attribute before the substatement of <span class="mono">while</span>, <span class="mono">do</span>, and <span class="mono">for</span> statements.</p>
-
-<blockquote>
-<pre style="background:none"><em>iteration-statement:</em>
-    <strong>while</strong> ( <em>condition</em> ) <ins><em>attribute-specifier-seq<sub>opt</sub></em></ins> <em>statement</em>
-    <strong>do</strong> <ins><em>attribute-specifier-seq<sub>opt</sub></em></ins> <em>statement</em> <strong>while</strong> ( <em>expression</em> ) ;
-    <strong>for</strong> ( <em>init-statement condition<sub>opt</sub>; expression<sub>opt</sub></em> ) <ins><em>attribute-specifier-seq<sub>opt</sub></em></ins> <em>statement</em>
-    <strong>for</strong> ( <em>for-range-declaration</em> : <em>for-range-initializer</em> ) <ins><em>attribute-specifier-seq<sub>opt</sub></em></ins> <em>statement</em>
-</pre>
-</blockquote>
-
-<p>In section 9.6 (stmt.jump) paragraph 1, change the grammar to allow an optional attribute for each jump statement.</p>
-
-<blockquote>
-<pre style="background:none"><em>jump-statement:</em>
-    <strong>break</strong> <ins><em>attribute-specifier-seq<sub>opt</sub></em></ins> ;
-    <strong>continue</strong> <ins><em>attribute-specifier-seq<sub>opt</sub></em></ins> ;
-    <strong>return</strong> <ins><em>attribute-specifier-seq<sub>opt</sub></em></ins> <em>expr-or-braced-init-list<sub>opt</sub> ; 
-    <strong>goto</strong> <ins><em>attribute-specifier-seq<sub>opt</sub></em></ins> <em>identifier</em> ;
-</pre>
-</blockquote>
-
-<p>In section 9.7 (stmt.dcl) paragraph 1, change the grammar to allow an optional attribute.</p>
-
-<blockquote>
-<pre style="background:none"><em>declaration-statement:</em>
-    <ins><em>attribute-specifier-seq<sub>opt</sub></em></ins> <em>block-declaration</em>
-</pre>
-</blockquote>
+<h2 id="spec">VIII. Technical Specifications</h2>
 
 <p>Add the <code>likely</code> attribute.</p>
 
@@ -455,7 +447,7 @@ The <em>attribute-token</em> <span class="mono"><strong>likely</strong></span> i
 
 <p>
 <ins>
-The attribute may be applied to labeled, expression, compound, selection, iteration, jump, and declaration statements. 
+The attribute may be applied to statements which appear within an enclosing <em>selection-statment</em> or <em>iteration-statement</em>.
 </ins>
 </p>
 
@@ -466,9 +458,15 @@ The attribute may be applied to labeled, expression, compound, selection, iterat
 </p>
 
 <p>
+<ins>
+[ <em>Note:</em> This attribute is intended for specialized optimizations which are implementation specific.  General usage of this attribute is discouraged. <em>&mdash; end note</em>]
+</ins>
+</p>
+
+<p>
 <ins>[ <em>Example:</em></ins>
-<pre style="background:none"><ins>if (foo()) [[likely]] {
-  do_something();
+<pre style="background:none"><ins>if (foo()) {
+  [[likely]] do_something();
 }
 </ins></pre>
 <ins>Implementations are encouraged to optimize for the case where foo() returns true. <em>&mdash; end example</em>]</ins>
@@ -488,7 +486,7 @@ The <em>attribute-token</em> <span class="mono"><strong>unlikely</strong></span>
 
 <p>
 <ins>
-The attribute may be applied to labeled, expression, compound, selection, iteration, jump, and declaration statements. 
+The attribute may be applied to statements which appear within an enclosing <em>selection-statment</em> or <em>iteration-statement</em>.
 </ins>
 </p>
 
@@ -499,9 +497,27 @@ The attribute may be applied to labeled, expression, compound, selection, iterat
 </p>
 
 <p>
+<ins>
+[ <em>Note:</em> This attribute is intended for specialized optimizations which are implementation specific.  General usage of this attribute is discouraged. <em>&mdash; end note</em>]
+</ins>
+</p>
+
+<p>
 <ins>[ <em>Example:</em></ins>
-<pre style="background:none"><ins>if (foo()) [[unlikely]] {
-  do_something();
+<pre style="background:none"><ins>void foo(int &i) {
+  if (bar()) {
+    [[likely]] ++i
+    [[unlikely]] i *= 42;
+  }
+}
+</ins></pre>
+<ins>When possible implementations are encouraged to issue warnings when [[likely]] and [[unlikely]] are used in conflicting ways. <em>&mdash; end example</em>]</ins>
+</p>
+
+<p>
+<ins>[ <em>Example:</em></ins>
+<pre style="background:none"><ins>if (foo()) {
+  [[unlikely]] do_something();
 }
 </ins></pre>
 <ins>Implementations are encouraged to optimize for the case where foo() returns false. <em>&mdash; end example</em>]</ins>
